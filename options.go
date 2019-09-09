@@ -10,3 +10,10 @@ func WithLogger(logger *zap.Logger) Option {
 		return nil
 	}
 }
+
+func WithUpdateTimeout(secs int) Option {
+	return func(conf *Config) error {
+		conf.UpdateTimeoutSec = secs
+		return nil
+	}
+}

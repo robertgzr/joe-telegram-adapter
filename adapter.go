@@ -23,17 +23,23 @@ type BotAdapter struct {
 
 type Config struct {
 	Token            string
-	Name             string
-	Debug            bool
 	UpdateTimeoutSec int
 	Logger           *zap.Logger
 }
 
 func Adapter(token string, opts ...Option) joe.Module {
 	return joe.ModuleFunc(func(joeConf *joe.Config) error {
-		conf, err := newConf(token, joeConf, opts)
-		if err != nil {
-			return err
+		conf := Config{Token: token}
+
+		for _, opt := range opts {
+			err := opt(&conf)
+			if err != nil {
+				return err
+			}
+		}
+
+		if conf.Logger == nil {
+			conf.Logger = joeConf.Logger("telegram")
 		}
 
 		a, err := NewAdapter(joeConf.Context, conf)
@@ -44,23 +50,6 @@ func Adapter(token string, opts ...Option) joe.Module {
 		joeConf.SetAdapter(a)
 		return nil
 	})
-}
-
-func newConf(token string, joeConf *joe.Config, opts []Option) (Config, error) {
-	conf := Config{Token: token, Name: joeConf.Name}
-
-	for _, opt := range opts {
-		err := opt(&conf)
-		if err != nil {
-			return conf, err
-		}
-	}
-
-	if conf.Logger == nil {
-		conf.Logger = joeConf.Logger("telegram")
-	}
-
-	return conf, nil
 }
 
 func NewAdapter(ctx context.Context, conf Config) (*BotAdapter, error) {
