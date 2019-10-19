@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type BotAdapter struct {
+type TelegramAdapter struct {
 	context context.Context
 	logger  *zap.Logger
 	name    string
@@ -52,7 +52,7 @@ func Adapter(token string, opts ...Option) joe.Module {
 	})
 }
 
-func NewAdapter(ctx context.Context, conf Config) (*BotAdapter, error) {
+func NewAdapter(ctx context.Context, conf Config) (*TelegramAdapter, error) {
 	tg, err := tgbotapi.NewBotAPI(conf.Token)
 	if err != nil {
 		return nil, errors.Wrap(err, "telegram failed to initialize")
@@ -68,8 +68,8 @@ func NewAdapter(ctx context.Context, conf Config) (*BotAdapter, error) {
 	return newAdapter(ctx, tg, updates, conf)
 }
 
-func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, conf Config) (*BotAdapter, error) {
-	a := &BotAdapter{
+func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, conf Config) (*TelegramAdapter, error) {
+	a := &TelegramAdapter{
 		tg:      tg,
 		updates: updates,
 		context: ctx,
@@ -95,11 +95,11 @@ func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.Updat
 
 // RegisterAt implements the joe.Adapter interface by emitting the telegram API
 // events to the given brain
-func (a *BotAdapter) RegisterAt(brain *joe.Brain) {
+func (a *TelegramAdapter) RegisterAt(brain *joe.Brain) {
 	go a.handleTelegramEvents(brain)
 }
 
-func (a *BotAdapter) handleTelegramEvents(brain *joe.Brain) {
+func (a *TelegramAdapter) handleTelegramEvents(brain *joe.Brain) {
 	for update := range a.updates {
 		select {
 		case <-a.context.Done():
@@ -147,7 +147,7 @@ func (a *BotAdapter) handleTelegramEvents(brain *joe.Brain) {
 	}
 }
 
-func (a *BotAdapter) Send(txt, chatIDString string) error {
+func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 	chatID, err := strconv.ParseInt(chatIDString, 10, 64)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse chat id")
@@ -161,7 +161,7 @@ func (a *BotAdapter) Send(txt, chatIDString string) error {
 	return err
 }
 
-func (a *BotAdapter) Close() error {
+func (a *TelegramAdapter) Close() error {
 	a.updates.Clear()
 	return nil
 }
