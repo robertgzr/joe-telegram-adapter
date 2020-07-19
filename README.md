@@ -96,6 +96,28 @@ func (b *ExampleBot) HandleTelegramCommands(ev telegram.ReceiveCommandEvent) err
 }
 ```
 
+
+## Additional features
+
+Some features available via the [Bot API][tgbotapi] is *nice to have* when writing
+bots:
+
+```go
+tg, ok := Bot.Adapter.(*telegram.TelegramAdapter)
+```
+
+`tg.BotAPI` allows full access to the Bot API interface.
+
+This package also provides some abstractions for ease of use:
+
+```
+// photo/gif/sticker can be file, FileReader, or FileBytes which will upload a
+// new instance; or a string which assumes a telegram fileID
+tg.SendPhoto(msg.Channel, photo, "caption")
+tg.SendGif(msg.Channel, gif, "caption")
+tg.SendSticker(msg.Channel, sticker)
+```
+
 ## License
 
 [BSD-3-Clause](LICENSE)
