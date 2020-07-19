@@ -19,6 +19,8 @@ type TelegramAdapter struct {
 
 	BotAPI  *tgbotapi.BotAPI
 	updates tgbotapi.UpdatesChannel
+
+	callbacks map[string]Callback
 }
 
 type Config struct {
@@ -70,10 +72,11 @@ func NewAdapter(ctx context.Context, conf Config) (*TelegramAdapter, error) {
 
 func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, conf Config) (*TelegramAdapter, error) {
 	a := &TelegramAdapter{
-		BotAPI:  tg,
-		updates: updates,
-		context: ctx,
-		logger:  conf.Logger,
+		BotAPI:    tg,
+		updates:   updates,
+		context:   ctx,
+		logger:    conf.Logger,
+		callbacks: make(map[string]Callback),
 	}
 
 	if a.logger == nil {
@@ -106,6 +109,38 @@ func (a *TelegramAdapter) handleTelegramEvents(brain *joe.Brain) {
 			a.logger.Debug("Cancelling event loop")
 			return
 		default:
+		}
+
+		// handle callback queries
+		if update.CallbackQuery != nil {
+			q := update.CallbackQuery
+			l := a.logger.With(
+				zap.Int("update_id", update.UpdateID),
+				zap.String("callback_query_id", q.ID),
+				zap.String("callback_data", q.Data))
+			l.Debug("Received callback query")
+			cb, ok := a.callbacks[q.Data]
+			if !ok {
+				l.Error("No registered callback")
+				continue
+			}
+			go func() {
+				l.Debug("Processing callback query")
+				if err := cb(formatChatID(q.Message.Chat.ID)); err != nil {
+					l.Error("Failed processing callback query",
+						zap.Error(err))
+				}
+				// TODO doing this here prevents the callback from opening a URL
+				l.Debug("Answering callback query")
+				if _, err := a.BotAPI.AnswerCallbackQuery(tgbotapi.CallbackConfig{
+					CallbackQueryID: q.ID,
+					ShowAlert:       false,
+				}); err != nil {
+					l.Error("Failed Answering callback query",
+						zap.Error(err))
+				}
+			}()
+			continue
 		}
 
 		// skip empty every other update type
