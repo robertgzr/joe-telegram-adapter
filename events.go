@@ -1,8 +1,6 @@
 package telegram // import "github.com/robertgzr/joe-telegram-adapter"
 
 import (
-	"strconv"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -15,5 +13,5 @@ type ReceiveCommandEvent struct {
 }
 
 func (e ReceiveCommandEvent) Channel() string {
-	return strconv.FormatInt(e.Chat.ID, 10)
+	return formatChatID(e.Chat.ID)
 }

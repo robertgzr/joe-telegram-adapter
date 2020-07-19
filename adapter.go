@@ -17,7 +17,7 @@ type TelegramAdapter struct {
 	name    string
 	userID  int
 
-	tg      *tgbotapi.BotAPI
+	BotAPI  *tgbotapi.BotAPI
 	updates tgbotapi.UpdatesChannel
 }
 
@@ -70,7 +70,7 @@ func NewAdapter(ctx context.Context, conf Config) (*TelegramAdapter, error) {
 
 func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, conf Config) (*TelegramAdapter, error) {
 	a := &TelegramAdapter{
-		tg:      tg,
+		BotAPI:  tg,
 		updates: updates,
 		context: ctx,
 		logger:  conf.Logger,
@@ -80,7 +80,7 @@ func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.Updat
 		a.logger = zap.NewNop()
 	}
 
-	user, err := tg.GetMe()
+	user, err := a.BotAPI.GetMe()
 	if err != nil {
 		return nil, errors.Wrap(err, "telegram failed to get bot user")
 	}
@@ -108,27 +108,22 @@ func (a *TelegramAdapter) handleTelegramEvents(brain *joe.Brain) {
 		default:
 		}
 
+		// skip empty every other update type
 		if update.Message == nil {
 			continue
 		}
 
 		m := update.Message
-		text := strings.TrimSpace(m.Text)
-
-		a.logger.Debug("Received message",
-			zap.Int("update_id", update.UpdateID),
-			zap.Int("message_id", m.MessageID),
-		)
 
 		if m.IsCommand() {
 			arg0, argStr := m.Command(), m.CommandArguments()
 			args := strings.Split(argStr, " ")
 
 			a.logger.Debug("Received command",
+				zap.Int("update_id", update.UpdateID),
 				zap.String("command", arg0),
-				zap.String("arguments", argStr),
+				zap.Strings("args", args),
 			)
-
 			brain.Emit(ReceiveCommandEvent{
 				Arg0: arg0,
 				Args: args,
@@ -136,11 +131,16 @@ func (a *TelegramAdapter) handleTelegramEvents(brain *joe.Brain) {
 				Chat: m.Chat,
 				Data: m,
 			})
+			continue
 		}
 
+		a.logger.Debug("Received message",
+			zap.Int("update_id", update.UpdateID),
+			zap.Int("message_id", m.MessageID),
+		)
 		brain.Emit(joe.ReceiveMessageEvent{
-			Text:     text,
-			Channel:  strconv.FormatInt(m.Chat.ID, 10),
+			Text:     strings.TrimSpace(m.Text),
+			Channel:  formatChatID(m.Chat.ID),
 			AuthorID: strconv.Itoa(m.From.ID),
 			Data:     m,
 		})
@@ -157,7 +157,7 @@ func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 		zap.Int64("chat_id", chatID),
 	)
 
-	_, err = a.tg.Send(tgbotapi.NewMessage(chatID, txt))
+	_, err = a.BotAPI.Send(tgbotapi.NewMessage(chatID, txt))
 	return err
 }
 
