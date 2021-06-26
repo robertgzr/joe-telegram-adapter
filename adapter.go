@@ -1,3 +1,5 @@
+// Package telegram implements a joe-bot adapter for the Telegram BotAPI
+//
 package telegram // import "github.com/robertgzr/joe-telegram-adapter"
 
 import (
@@ -11,6 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// TelegramAdapter is a joe-bot adapter for the Telegram BotAPI
 type TelegramAdapter struct {
 	context context.Context
 	logger  *zap.Logger
@@ -23,15 +26,22 @@ type TelegramAdapter struct {
 	callbacks map[string]Callback
 }
 
+// Config holds the options pased to the Telegram adapter
 type Config struct {
-	Token            string
+	// Token is the token issued by botfather
+	// https://core.telegram.org/bots/api#authorizing-your-bot
+	Token string
+	// UpdateTimeoutSec configures the UpdateCofnig.Timout option of the
+	// telegram-bot-api client
 	UpdateTimeoutSec int
 	// UpdateResumeFrom is the last Update ID to resume from
+	// https://core.telegram.org/bots/api#update
 	UpdateResumeFrom int
 
 	Logger *zap.Logger
 }
 
+// Adapter returns a joe.Module of the TelegramAdapter
 func Adapter(token string, opts ...Option) joe.Module {
 	return joe.ModuleFunc(func(joeConf *joe.Config) error {
 		conf := Config{Token: token}
@@ -57,6 +67,7 @@ func Adapter(token string, opts ...Option) joe.Module {
 	})
 }
 
+// NewAdapter creates a new instance of the TelegramAdapter
 func NewAdapter(ctx context.Context, conf Config) (*TelegramAdapter, error) {
 	tg, err := tgbotapi.NewBotAPI(conf.Token)
 	if err != nil {
@@ -185,6 +196,8 @@ func (a *TelegramAdapter) handleTelegramEvents(brain *joe.Brain) {
 	}
 }
 
+// Send sends a messages (formatted using Config.ParseMode) via the
+// Telegram BotAPI
 func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 	chatID, err := strconv.ParseInt(chatIDString, 10, 64)
 	if err != nil {
@@ -201,6 +214,7 @@ func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 	return err
 }
 
+// Close finishes processing updates
 func (a *TelegramAdapter) Close() error {
 	a.updates.Clear()
 	return nil

@@ -4,6 +4,7 @@ import "go.uber.org/zap"
 
 type Option func(*Config) error
 
+// WithLogger allows configuring a custom zap.Logger for the adapter to use
 func WithLogger(logger *zap.Logger) Option {
 	return func(conf *Config) error {
 		conf.Logger = logger
@@ -11,6 +12,7 @@ func WithLogger(logger *zap.Logger) Option {
 	}
 }
 
+// WithUpdateTimeout allows configuring the update loop timeout (in seconds)
 func WithUpdateTimeout(secs int) Option {
 	return func(conf *Config) error {
 		conf.UpdateTimeoutSec = secs
@@ -18,6 +20,8 @@ func WithUpdateTimeout(secs int) Option {
 	}
 }
 
+// WithUpdateResumeFrom allows setting the starting Update ID from which to
+// process updates froms.
 func WithUpdateResumeFrom(id int) Option {
 	return func(conf *Config) error {
 		conf.UpdateResumeFrom = id
