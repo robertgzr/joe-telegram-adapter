@@ -26,7 +26,10 @@ type TelegramAdapter struct {
 type Config struct {
 	Token            string
 	UpdateTimeoutSec int
-	Logger           *zap.Logger
+	// UpdateResumeFrom is the last Update ID to resume from
+	UpdateResumeFrom int
+
+	Logger *zap.Logger
 }
 
 func Adapter(token string, opts ...Option) joe.Module {
@@ -60,7 +63,7 @@ func NewAdapter(ctx context.Context, conf Config) (*TelegramAdapter, error) {
 		return nil, errors.Wrap(err, "telegram failed to initialize")
 	}
 
-	u := tgbotapi.NewUpdate(0)
+	u := tgbotapi.NewUpdate(conf.UpdateResumeFrom)
 	u.Timeout = conf.UpdateTimeoutSec
 	updates, err := tg.GetUpdatesChan(u)
 	if err != nil {

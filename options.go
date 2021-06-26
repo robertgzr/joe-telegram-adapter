@@ -17,3 +17,10 @@ func WithUpdateTimeout(secs int) Option {
 		return nil
 	}
 }
+
+func WithUpdateResumeFrom(id int) Option {
+	return func(conf *Config) error {
+		conf.UpdateResumeFrom = id
+		return nil
+	}
+}
