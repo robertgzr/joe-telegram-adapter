@@ -28,3 +28,11 @@ func WithUpdateResumeFrom(id int) Option {
 		return nil
 	}
 }
+
+// WithParseMode allows setting the message formatting used by Send
+func WithParseMode(mode string) Option {
+	return func(conf *Config) error {
+		conf.ParseMode = mode
+		return nil
+	}
+}

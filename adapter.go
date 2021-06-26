@@ -19,6 +19,7 @@ type TelegramAdapter struct {
 	logger  *zap.Logger
 	name    string
 	userID  int
+	conf    Config
 
 	BotAPI  *tgbotapi.BotAPI
 	updates tgbotapi.UpdatesChannel
@@ -37,6 +38,9 @@ type Config struct {
 	// UpdateResumeFrom is the last Update ID to resume from
 	// https://core.telegram.org/bots/api#update
 	UpdateResumeFrom int
+	// ParseMode sets the formatting style for messages the bot sends
+	// https://core.telegram.org/bots/api#formatting-options
+	ParseMode string
 
 	Logger *zap.Logger
 }
@@ -91,6 +95,7 @@ func newAdapter(ctx context.Context, tg *tgbotapi.BotAPI, updates tgbotapi.Updat
 		context:   ctx,
 		logger:    conf.Logger,
 		callbacks: make(map[string]Callback),
+		conf:      conf,
 	}
 
 	if a.logger == nil {
@@ -209,7 +214,7 @@ func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 	)
 
 	m := tgbotapi.NewMessage(chatID, txt)
-	m.ParseMode = "MarkdownV2"
+	m.ParseMode = a.conf.ParseMode
 	_, err = a.BotAPI.Send(m)
 	return err
 }
