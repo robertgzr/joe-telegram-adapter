@@ -195,7 +195,9 @@ func (a *TelegramAdapter) Send(txt, chatIDString string) error {
 		zap.Int64("chat_id", chatID),
 	)
 
-	_, err = a.BotAPI.Send(tgbotapi.NewMessage(chatID, txt))
+	m := tgbotapi.NewMessage(chatID, txt)
+	m.ParseMode = "MarkdownV2"
+	_, err = a.BotAPI.Send(m)
 	return err
 }
 

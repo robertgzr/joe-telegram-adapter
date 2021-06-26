@@ -74,12 +74,14 @@ func (a *TelegramAdapter) SendSticker(channel string, sticker interface{}) error
 	return err
 }
 
-type Callback = func(channel string) error
-type Button struct {
-	id    string
-	label string
-	cb    Callback
-}
+type (
+	Callback = func(channel string) error
+	Button   struct {
+		id    string
+		label string
+		cb    Callback
+	}
+)
 
 func (a *TelegramAdapter) NewButton(label string, cb Callback) Button {
 	return Button{
