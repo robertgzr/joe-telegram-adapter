@@ -1,6 +1,6 @@
 module github.com/robertgzr/joe-telegram-adapter
 
-go 1.12
+go 1.16
 
 require (
 	github.com/go-joe/joe v0.11.0
